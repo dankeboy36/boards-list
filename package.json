@@ -32,7 +32,9 @@
   "dependencies": {
     "ardunno-cli": "^0.1.7",
     "clone": "^2.1.2",
-    "deep-equal": "^2.2.3"
+    "deep-equal": "^2.2.3",
+    "fqbn": "^1.0.3",
+    "natural-compare": "^1.4.0"
   },
   "devDependencies": {
     "@semantic-release/changelog": "^6.0.3",
@@ -46,6 +48,7 @@
     "@types/clone": "^2.1.4",
     "@types/deep-equal": "^1.0.4",
     "@types/mocha": "^10.0.1",
+    "@types/natural-compare": "^1.4.3",
     "@types/node": "16.x",
     "@types/temp": "^0.9.1",
     "@typescript-eslint/eslint-plugin": "^5.59.1",

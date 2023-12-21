@@ -3,7 +3,8 @@ import {
   DetectedPort,
   DetectedPorts,
   Port,
-} from '../../common/protocol/boards-service';
+  createPortKey,
+} from '../api';
 
 export const mkr1000: BoardIdentifier = {
   name: 'Arduino MKR1000',
@@ -147,14 +148,14 @@ export function detectedPort(
   port: Port,
   ...boards: BoardIdentifier[]
 ): { [portKey: string]: DetectedPort } {
-  return { [Port.keyOf(port)]: boards.length ? { port, boards } : { port } };
+  return { [createPortKey(port)]: boards.length ? { port, boards } : { port } };
 }
 
 export function history(
   port: Port,
   board: BoardIdentifier
 ): { [portKey: string]: BoardIdentifier } {
-  return { [Port.keyOf(port)]: board };
+  return { [createPortKey(port)]: board };
 }
 
 export const detectedPorts: DetectedPorts = {
