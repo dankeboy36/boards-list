@@ -1,0 +1,12 @@
+# 1.0.0 (2023-12-23)
+
+
+### Bug Fixes
+
+* expand boards if available on detected port ([e15d303](https://github.com/dankeboy36/boards-list/commit/e15d303b88a947e44025c80697b842f05a6de650)), closes [#2175](https://github.com/dankeboy36/boards-list/issues/2175)
+
+
+### Features
+
+* initial release ([#1](https://github.com/dankeboy36/boards-list/issues/1)) ([cd19e14](https://github.com/dankeboy36/boards-list/commit/cd19e1453cb965b9a79e9cf24a6cd70cb9a42f81))
+* simplify board and port handling ([#2165](https://github.com/dankeboy36/boards-list/issues/2165)) ([e7d9bc9](https://github.com/dankeboy36/boards-list/commit/e7d9bc974e21d9def6b3480d42a03e21118e7fc0)), closes [#43](https://github.com/dankeboy36/boards-list/issues/43) [#82](https://github.com/dankeboy36/boards-list/issues/82) [#1319](https://github.com/dankeboy36/boards-list/issues/1319) [#1366](https://github.com/dankeboy36/boards-list/issues/1366) [#2143](https://github.com/dankeboy36/boards-list/issues/2143) [#2158](https://github.com/dankeboy36/boards-list/issues/2158)
