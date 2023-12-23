@@ -1,32 +1,36 @@
-import type { Mutable } from '@theia/core/lib/common/types';
-import { Unknown } from '../nls';
-import type { Defined } from '../types';
-import { naturalCompare } from '../utils';
+import naturalCompare from 'natural-compare';
 import {
   BoardIdentifier,
-  boardIdentifierComparator,
-  boardIdentifierEquals,
   BoardsConfig,
+  Defined,
   DetectedPort,
   DetectedPorts,
+  Mutable,
+  Port,
+  PortIdentifier,
+  boardIdentifierComparator,
+  boardIdentifierEquals,
+  boardIdentifierLabel,
+  createPortKey,
   emptyBoardsConfig,
   findMatchingPortIndex,
   isBoardIdentifier,
   isDefinedBoardsConfig,
-  Port,
-  PortIdentifier,
-  portIdentifierEquals,
+  isPort,
   portProtocolComparator,
-  selectBoard,
-  unconfirmedBoard,
-  notConnected,
-  boardIdentifierLabel,
-} from './boards-service';
+} from './api';
+
+const nls = {
+  unconfirmedBoard: 'Unconfirmed board',
+  selectBoard: 'Select Board',
+  notConnected: '[not connected]',
+  unknown: 'Unknown',
+} as const;
 
 /**
  * Representation of a detected port with an optional board.
  */
-export interface BoardListItem {
+export interface BoardsListItem {
   readonly port: Port;
   readonly board?: BoardIdentifier;
 }
@@ -36,12 +40,12 @@ export interface BoardListItem {
  * If multiple boards are detected, but the board names are the same, the `board` will be the `first` element of the `boards` array.
  * If multiple boards are detected, but the board names are not identical, the `board` will be missing.
  */
-export interface MultiBoardsBoardListItem extends BoardListItem {
+export interface MultiBoardsBoardsListItem extends BoardsListItem {
   readonly boards: readonly BoardIdentifier[];
 }
 
 function findUniqueBoardName(
-  item: MultiBoardsBoardListItem
+  item: MultiBoardsBoardsListItem
 ): string | undefined {
   const distinctNames = new Set(item.boards.map(({ name }) => name));
   if (distinctNames.size === 1) {
@@ -53,15 +57,15 @@ function findUniqueBoardName(
   return undefined;
 }
 
-export function isMultiBoardsBoardListItem(
+export function isMultiBoardsBoardsListItem(
   arg: unknown
-): arg is MultiBoardsBoardListItem {
+): arg is MultiBoardsBoardsListItem {
   return (
-    isBoardListItem(arg) &&
-    (<MultiBoardsBoardListItem>arg).boards !== undefined &&
-    Array.isArray((<MultiBoardsBoardListItem>arg).boards) &&
-    Boolean((<MultiBoardsBoardListItem>arg).boards.length) &&
-    (<MultiBoardsBoardListItem>arg).boards.every(isBoardIdentifier)
+    isBoardsListItem(arg) &&
+    (<MultiBoardsBoardsListItem>arg).boards !== undefined &&
+    Array.isArray((<MultiBoardsBoardsListItem>arg).boards) &&
+    Boolean((<MultiBoardsBoardsListItem>arg).boards.length) &&
+    (<MultiBoardsBoardsListItem>arg).boards.every(isBoardIdentifier)
   );
 }
 
@@ -71,14 +75,14 @@ export function isMultiBoardsBoardListItem(
  *   - manually specified board for a detected port where no boards were discovered,
  *   - the board has been overridden for detected port discovered board pair.
  */
-export type InferredBoardListItem =
-  | ManuallySelectedBoardListItem
-  | BoardOverriddenBoardListItem;
+export type InferredBoardsListItem =
+  | ManuallySelectedBoardsListItem
+  | BoardOverriddenBoardsListItem;
 
 /**
  * No boards have been discovered for a detected port, it has been manually selected by the user.
  */
-export interface ManuallySelectedBoardListItem extends BoardListItem {
+export interface ManuallySelectedBoardsListItem extends BoardsListItem {
   readonly inferredBoard: BoardIdentifier;
   readonly type: 'manually-selected';
 }
@@ -86,88 +90,64 @@ export interface ManuallySelectedBoardListItem extends BoardListItem {
 /**
  * One or more boards have been discovered for a detected port, but the board has been overridden by a manual action.
  */
-export interface BoardOverriddenBoardListItem extends BoardListItem {
+export interface BoardOverriddenBoardsListItem extends BoardsListItem {
   readonly inferredBoard: BoardIdentifier;
   readonly board: BoardIdentifier;
   readonly type: 'board-overridden';
 }
 
-export function isBoardListItem(arg: unknown): arg is BoardListItem {
+export function isBoardsListItem(arg: unknown): arg is BoardsListItem {
   return (
     Boolean(arg) &&
     typeof arg === 'object' &&
-    (<BoardListItem>arg).port !== undefined &&
-    Port.is((<BoardListItem>arg).port) &&
-    ((<BoardListItem>arg).board === undefined ||
-      ((<BoardListItem>arg).board !== undefined &&
-        isBoardIdentifier((<BoardListItem>arg).board)))
+    (<BoardsListItem>arg).port !== undefined &&
+    isPort((<BoardsListItem>arg).port) &&
+    ((<BoardsListItem>arg).board === undefined ||
+      ((<BoardsListItem>arg).board !== undefined &&
+        isBoardIdentifier((<BoardsListItem>arg).board)))
   );
 }
 
-export function boardListItemEquals(
-  left: BoardListItem,
-  right: BoardListItem
-): boolean {
-  if (portIdentifierEquals(left.port, right.port)) {
-    const leftBoard = getBoardOrInferredBoard(left);
-    const rightBoard = getBoardOrInferredBoard(right);
-    if (boardIdentifierEquals(leftBoard, rightBoard)) {
-      const leftInferredBoard = getInferredBoardOrBoard(left);
-      const rightInferredBoard = getInferredBoardOrBoard(right);
-      return boardIdentifierEquals(leftInferredBoard, rightInferredBoard);
-    }
-  }
-  return false;
-}
-
-export interface BoardListItemWithBoard extends BoardListItem {
+export interface BoardsListItemWithBoard extends BoardsListItem {
   readonly board: BoardIdentifier;
 }
 
 function getBoardOrInferredBoard(
-  item: BoardListItem
+  item: BoardsListItem
 ): BoardIdentifier | undefined {
   let board: BoardIdentifier | undefined = undefined;
   board = item.board;
-  if (!board && isInferredBoardListItem(item)) {
+  if (!board && isInferredBoardsListItem(item)) {
     board = item.inferredBoard;
   }
   return board;
 }
 
 export function getInferredBoardOrBoard(
-  item: BoardListItem
+  item: BoardsListItem
 ): BoardIdentifier | undefined {
-  if (isInferredBoardListItem(item)) {
+  if (isInferredBoardsListItem(item)) {
     return item.inferredBoard;
   }
   return item.board;
 }
 
-export function isInferredBoardListItem(
+export function isInferredBoardsListItem(
   arg: unknown
-): arg is InferredBoardListItem {
+): arg is InferredBoardsListItem {
   return (
-    isBoardListItem(arg) &&
-    (<InferredBoardListItem>arg).type !== undefined &&
-    isInferenceType((<InferredBoardListItem>arg).type) &&
-    (<InferredBoardListItem>arg).inferredBoard !== undefined &&
-    isBoardIdentifier((<InferredBoardListItem>arg).inferredBoard)
+    isBoardsListItem(arg) &&
+    (<InferredBoardsListItem>arg).type !== undefined &&
+    isInferenceType((<InferredBoardsListItem>arg).type) &&
+    (<InferredBoardsListItem>arg).inferredBoard !== undefined &&
+    isBoardIdentifier((<InferredBoardsListItem>arg).inferredBoard)
   );
 }
 
 /**
  * Stores historical info about boards manually specified for detected boards. The key are generated with `Port#keyOf`.
  */
-export type BoardListHistory = Readonly<Record<string, BoardIdentifier>>;
-
-export function isBoardListHistory(arg: unknown): arg is BoardListHistory {
-  return (
-    Boolean(arg) &&
-    typeof arg === 'object' &&
-    Object.entries(<object>arg).every(([, value]) => isBoardIdentifier(value))
-  );
-}
+export type BoardsListHistory = Readonly<Record<string, BoardIdentifier>>;
 
 const inferenceTypeLiterals = [
   /**
@@ -189,18 +169,18 @@ function isInferenceType(arg: unknown): arg is InferenceType {
 
 /**
  * Compare precedence:
- *  1. `BoardListItem#port#protocol`: `'serial'`, `'network'`, then natural compare of the `protocol` string.
- *  1. `BoardListItem`s with a `board` comes before items without a `board`.
- *  1. `BoardListItem#board`:
+ *  1. `BoardsListItem#port#protocol`: `'serial'`, `'network'`, then natural compare of the `protocol` string.
+ *  1. `BoardsListItem`s with a `board` comes before items without a `board`.
+ *  1. `BoardsListItem#board`:
  *     1. Items with `'arduino'` vendor ID in the `fqbn` come before other vendors.
  *     1. Natural compare of the `name`.
- *  1. If the `BoardListItem`s do not have a `board` property:
+ *  1. If the `BoardsListItem`s do not have a `board` property:
  *     1. Ambiguous boards come before no boards.
- *     1. `BoardListItem#port#address` natural compare is the fallback.
+ *     1. `BoardsListItem#port#address` natural compare is the fallback.
  */
-function boardListItemComparator(
-  left: BoardListItem,
-  right: BoardListItem
+function BoardsListItemComparator(
+  left: BoardsListItem,
+  right: BoardsListItem
 ): number {
   // sort by port protocol
   let result = portProtocolComparator(left.port, right.port);
@@ -218,14 +198,20 @@ function boardListItemComparator(
   }
 
   // detected ports with multiple discovered boards come before any other unknown items
-  if (isMultiBoardsBoardListItem(left) && !isMultiBoardsBoardListItem(right)) {
+  if (
+    isMultiBoardsBoardsListItem(left) &&
+    !isMultiBoardsBoardsListItem(right)
+  ) {
     return -1;
   }
-  if (!isMultiBoardsBoardListItem(left) && !isMultiBoardsBoardListItem(right)) {
+  if (
+    !isMultiBoardsBoardsListItem(left) &&
+    isMultiBoardsBoardsListItem(right)
+  ) {
     return 1;
   }
   // ambiguous boards with a unique board name comes first than other ambiguous ones
-  if (isMultiBoardsBoardListItem(left) && isMultiBoardsBoardListItem(right)) {
+  if (isMultiBoardsBoardsListItem(left) && isMultiBoardsBoardsListItem(right)) {
     const leftUniqueName = findUniqueBoardName(left);
     const rightUniqueName = findUniqueBoardName(right);
     if (leftUniqueName && !rightUniqueName) {
@@ -246,7 +232,7 @@ function boardListItemComparator(
 /**
  * What is shown in the UI for the entire board list.
  */
-export interface BoardListLabels {
+export interface BoardsListLabels {
   readonly boardLabel: string;
   readonly portProtocol: string | undefined;
   readonly tooltip: string;
@@ -256,16 +242,16 @@ export interface BoardListLabels {
   readonly selected: boolean;
 }
 
-function createBoardListLabels(
+function createBoardsListLabels(
   boardsConfig: BoardsConfig,
   allPorts: readonly DetectedPort[],
-  selectedItem: BoardListItem | undefined
-): BoardListLabels {
+  selectedItem: BoardsListItem | undefined
+): BoardsListLabels {
   const { selectedBoard, selectedPort } = boardsConfig;
-  const boardLabel = selectedBoard?.name || selectBoard;
+  const boardLabel = selectedBoard?.name || nls.selectBoard;
   let tooltip = '';
   if (!selectedBoard && !selectedPort) {
-    tooltip = selectBoard;
+    tooltip = nls.selectBoard;
   } else {
     if (selectedBoard) {
       tooltip += boardIdentifierLabel(selectedBoard);
@@ -277,7 +263,7 @@ function createBoardListLabels(
       tooltip += selectedPort.address;
       const index = findMatchingPortIndex(selectedPort, allPorts);
       if (index < 0) {
-        tooltip += ` ${notConnected}`;
+        tooltip += ` ${nls.notConnected}`;
       }
     }
   }
@@ -292,7 +278,7 @@ function createBoardListLabels(
 /**
  * What is show in the UI for a particular board with all its refinements, fallbacks, and tooltips.
  */
-export interface BoardListItemLabels {
+export interface BoardsListItemLabels {
   readonly boardLabel: string;
   readonly boardLabelWithFqbn: string;
   readonly portLabel: string;
@@ -300,33 +286,35 @@ export interface BoardListItemLabels {
   readonly tooltip: string;
 }
 
-export interface BoardListItemUI extends BoardListItem {
-  readonly labels: BoardListItemLabels;
-  readonly defaultAction: BoardListItemAction;
+export interface BoardsListItemUI extends BoardsListItem {
+  readonly labels: BoardsListItemLabels;
+  readonly defaultAction: BoardsListItemAction;
   readonly otherActions: Readonly<{
     edit?: EditBoardsConfigAction;
     revert?: SelectBoardsConfigAction;
   }>;
 }
 
-function createBoardListItemLabels(item: BoardListItem): BoardListItemLabels {
+function createBoardsListItemLabels(
+  item: BoardsListItem
+): BoardsListItemLabels {
   const { port } = item;
   const portLabel = port.address;
   const portProtocol = port.protocol;
   let board = item.board; // use default board label if any
-  if (isInferredBoardListItem(item)) {
+  if (isInferredBoardsListItem(item)) {
     board = item.inferredBoard; // inferred board overrides any discovered boards
   }
   // if the board is still missing, maybe it's ambiguous
-  if (!board && isMultiBoardsBoardListItem(item)) {
+  if (!board && isMultiBoardsBoardsListItem(item)) {
     const name =
       // get a unique board name
       findUniqueBoardName(item) ??
       // or fall back to something else than unknown board
-      unconfirmedBoard;
+      nls.unconfirmedBoard;
     board = { name, fqbn: undefined };
   }
-  const boardLabel = board?.name ?? Unknown;
+  const boardLabel = board?.name ?? nls.unknown;
   let boardLabelWithFqbn = boardLabel;
   if (board?.fqbn) {
     boardLabelWithFqbn += ` (${board.fqbn})`;
@@ -345,12 +333,12 @@ function createBoardListItemLabels(item: BoardListItem): BoardListItemLabels {
  * the CLI provides a `1..*` mapping between a port and the matching boards list. This type inverts the mapping
  * and makes a `1..1` association between a board identifier and the port it belongs to.
  */
-export interface BoardList {
-  readonly labels: BoardListLabels;
+export interface BoardsList {
+  readonly labels: BoardsListLabels;
   /**
    * All detected ports with zero to many boards and optional inferred information based on historical selection/usage.
    */
-  readonly items: readonly BoardListItemUI[];
+  readonly items: readonly BoardsListItemUI[];
   /**
    * A snapshot of the board and port configuration this board list has been initialized with.
    */
@@ -367,7 +355,7 @@ export interface BoardList {
    *  - manually selected or overridden board for a detected port (`1`),
    *  - multiple discovered boards on detected port (`1..*`)
    */
-  readonly boards: readonly BoardListItemWithBoard[];
+  readonly boards: readonly BoardsListItemWithBoard[];
 
   /**
    * If `predicate` is not defined, no ports are filtered.
@@ -380,7 +368,7 @@ export interface BoardList {
    * Sugar for `#ports` with additional grouping based on the port `protocol`.
    */
   portsGroupedByProtocol(): Readonly<
-    Record<'serial' | 'network' | string, ReturnType<BoardList['ports']>>
+    Record<'serial' | 'network' | string, ReturnType<BoardsList['ports']>>
   >;
 
   /**
@@ -404,25 +392,25 @@ export interface EditBoardsConfigAction {
   readonly type: 'edit-boards-config';
   readonly params: EditBoardsConfigActionParams;
 }
-export type BoardListItemAction =
+export type BoardsListItemAction =
   | SelectBoardsConfigAction
   | EditBoardsConfigAction;
 
-export function createBoardList(
+export function createBoardsList(
   detectedPorts: DetectedPorts,
   boardsConfig: Readonly<BoardsConfig> = emptyBoardsConfig(),
-  boardListHistory: BoardListHistory = {}
-): BoardList {
-  const items: BoardListItemUI[] = [];
+  history: BoardsListHistory = {}
+): BoardsList {
+  const items: BoardsListItemUI[] = [];
   for (const detectedPort of Object.values(detectedPorts)) {
-    const item = createBoardListItemUI(detectedPort, boardListHistory);
+    const item = createBoardsListItemUI(detectedPort, history);
     items.push(item);
   }
-  items.sort(boardListItemComparator);
+  items.sort(BoardsListItemComparator);
   const selectedIndex = findSelectedIndex(boardsConfig, items);
   const boards = collectBoards(items);
   const allPorts = collectPorts(items, detectedPorts);
-  const labels = createBoardListLabels(
+  const labels = createBoardsListLabels(
     boardsConfig,
     allPorts,
     items[selectedIndex]
@@ -448,7 +436,7 @@ export function createBoardList(
           boardsConfig,
           items,
           selectedIndex,
-          boardListHistory,
+          history,
         },
         null,
         2
@@ -458,8 +446,8 @@ export function createBoardList(
 }
 
 function portsGroupedByProtocol(
-  allPorts: ReturnType<BoardList['ports']>
-): ReturnType<BoardList['portsGroupedByProtocol']> {
+  allPorts: ReturnType<BoardsList['ports']>
+): ReturnType<BoardsList['portsGroupedByProtocol']> {
   const result: Record<string, DetectedPort[] & { matchingIndex: number }> = {};
   for (const detectedPort of allPorts) {
     const protocol = detectedPort.port.protocol;
@@ -485,14 +473,14 @@ function filterPorts(
   allPorts: readonly DetectedPort[],
   selectedPort: PortIdentifier | undefined,
   predicate: (detectedPort: DetectedPort) => boolean = () => true
-): ReturnType<BoardList['ports']> {
+): ReturnType<BoardsList['ports']> {
   const ports = allPorts.filter(predicate);
   const matchingIndex = findMatchingPortIndex(selectedPort, ports);
   return Object.assign(ports, { matchingIndex });
 }
 
 function collectPorts(
-  items: readonly BoardListItem[],
+  items: readonly BoardsListItem[],
   detectedPorts: DetectedPorts
 ): DetectedPort[] {
   const allPorts: DetectedPort[] = [];
@@ -500,7 +488,7 @@ function collectPorts(
   const visitedPortKeys = new Set<string>();
   for (let i = 0; i < items.length; i++) {
     const { port } = items[i];
-    const portKey = Port.keyOf(port);
+    const portKey = createPortKey(port);
     if (!visitedPortKeys.has(portKey)) {
       visitedPortKeys.add(portKey);
       const detectedPort = detectedPorts[portKey];
@@ -513,25 +501,25 @@ function collectPorts(
 }
 
 function collectBoards(
-  items: readonly BoardListItem[]
-): readonly BoardListItemWithBoard[] {
-  const result: BoardListItemWithBoard[] = [];
+  items: readonly BoardsListItem[]
+): readonly BoardsListItemWithBoard[] {
+  const result: BoardsListItemWithBoard[] = [];
   for (let i = 0; i < items.length; i++) {
-    const boards: BoardListItemWithBoard[] = [];
+    const boards: BoardsListItemWithBoard[] = [];
     const item = items[i];
     const { port } = item;
     const board = getInferredBoardOrBoard(item);
     if (board) {
       boards.push({ board, port });
     }
-    if (isMultiBoardsBoardListItem(item)) {
+    if (isMultiBoardsBoardsListItem(item)) {
       for (const otherBoard of item.boards) {
         if (!boardIdentifierEquals(board, otherBoard)) {
           boards.push({ board: otherBoard, port });
         }
       }
     }
-    boards.sort(boardListItemComparator);
+    boards.sort(BoardsListItemComparator);
     result.push(...boards);
   }
   return result;
@@ -539,14 +527,14 @@ function collectBoards(
 
 function findSelectedIndex(
   boardsConfig: BoardsConfig,
-  items: readonly BoardListItem[]
+  items: readonly BoardsListItem[]
 ): number {
   if (!isDefinedBoardsConfig(boardsConfig)) {
     return -1;
   }
   const length = items.length;
   const { selectedPort, selectedBoard } = boardsConfig;
-  const portKey = Port.keyOf(selectedPort);
+  const portKey = createPortKey(selectedPort);
   // find the exact match of the board and port combination
   for (let index = 0; index < length; index++) {
     const item = items[index];
@@ -555,7 +543,7 @@ function findSelectedIndex(
       continue;
     }
     if (
-      Port.keyOf(port) === portKey &&
+      createPortKey(port) === portKey &&
       boardIdentifierEquals(board, selectedBoard)
     ) {
       return index;
@@ -564,12 +552,12 @@ function findSelectedIndex(
   // find match from inferred board
   for (let index = 0; index < length; index++) {
     const item = items[index];
-    if (!isInferredBoardListItem(item)) {
+    if (!isInferredBoardsListItem(item)) {
       continue;
     }
     const { inferredBoard, port } = item;
     if (
-      Port.keyOf(port) === portKey &&
+      createPortKey(port) === portKey &&
       boardIdentifierEquals(inferredBoard, boardsConfig.selectedBoard)
     ) {
       return index;
@@ -578,28 +566,28 @@ function findSelectedIndex(
   return -1;
 }
 
-function createBoardListItemUI(
+function createBoardsListItemUI(
   detectedPort: DetectedPort,
-  boardListHistory: BoardListHistory
-): BoardListItemUI {
-  const item = createBoardListItem(detectedPort, boardListHistory);
-  const labels = createBoardListItemLabels(item);
+  BoardsListHistory: BoardsListHistory
+): BoardsListItemUI {
+  const item = createBoardsListItem(detectedPort, BoardsListHistory);
+  const labels = createBoardsListItemLabels(item);
   const defaultAction = createDefaultAction(item);
   const otherActions = createOtherActions(item);
   return Object.assign(item, { labels, defaultAction, otherActions });
 }
 
-function createBoardListItem(
+function createBoardsListItem(
   detectedPort: DetectedPort,
-  boardListHistory: BoardListHistory
-): BoardListItem {
+  BoardsListHistory: BoardsListHistory
+): BoardsListItem {
   const { port, boards } = detectedPort;
   // boards with arduino vendor should come first
   boards?.sort(boardIdentifierComparator);
-  const portKey = Port.keyOf(port);
-  const inferredBoard = boardListHistory[portKey];
+  const portKey = createPortKey(port);
+  const inferredBoard = BoardsListHistory[portKey];
   if (!boards?.length) {
-    let unknownItem: BoardListItem | InferredBoardListItem = { port };
+    let unknownItem: BoardsListItem | InferredBoardsListItem = { port };
     // Infer unrecognized boards from the history
     if (inferredBoard) {
       unknownItem = {
@@ -611,7 +599,7 @@ function createBoardListItem(
     return unknownItem;
   } else if (boards.length === 1) {
     const board = boards[0];
-    let detectedItem: BoardListItemWithBoard | InferredBoardListItem = {
+    let detectedItem: BoardsListItemWithBoard | InferredBoardsListItem = {
       port,
       board,
     };
@@ -628,7 +616,7 @@ function createBoardListItem(
     }
     return detectedItem;
   } else {
-    let ambiguousItem: MultiBoardsBoardListItem | InferredBoardListItem = {
+    let ambiguousItem: MultiBoardsBoardsListItem | InferredBoardsListItem = {
       port,
       boards,
     };
@@ -643,8 +631,8 @@ function createBoardListItem(
   }
 }
 
-function createDefaultAction(item: BoardListItem): BoardListItemAction {
-  if (isInferredBoardListItem(item)) {
+function createDefaultAction(item: BoardsListItem): BoardsListItemAction {
+  if (isInferredBoardsListItem(item)) {
     return createSelectAction({
       selectedBoard: item.inferredBoard,
       selectedPort: item.port,
@@ -660,9 +648,9 @@ function createDefaultAction(item: BoardListItem): BoardListItemAction {
 }
 
 function createOtherActions(
-  item: BoardListItem
-): BoardListItemUI['otherActions'] {
-  if (isInferredBoardListItem(item)) {
+  item: BoardsListItem
+): BoardsListItemUI['otherActions'] {
+  if (isInferredBoardsListItem(item)) {
     const edit = createEditAction(item);
     if (item.type === 'board-overridden') {
       const revert = createSelectAction({
@@ -685,15 +673,15 @@ function createSelectAction(
   };
 }
 
-function createEditAction(item: BoardListItem): EditBoardsConfigAction {
+function createEditAction(item: BoardsListItem): EditBoardsConfigAction {
   const params: Mutable<EditBoardsConfigActionParams> = {
     portToSelect: item.port,
   };
-  if (isMultiBoardsBoardListItem(item)) {
+  if (isMultiBoardsBoardsListItem(item)) {
     const uniqueBoardName = findUniqueBoardName(item);
     params.query = uniqueBoardName ?? '';
     params.searchSet = item.boards;
-  } else if (isInferredBoardListItem(item)) {
+  } else if (isInferredBoardsListItem(item)) {
     params.query = item.inferredBoard.name;
   } else if (item.board) {
     params.query = item.board.name;
@@ -705,3 +693,10 @@ function createEditAction(item: BoardListItem): EditBoardsConfigAction {
     params,
   };
 }
+
+/**
+ * (non-API)
+ */
+export const __tests = {
+  nls,
+};

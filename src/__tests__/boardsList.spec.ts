@@ -1,19 +1,14 @@
 import { expect } from 'chai';
-import { Unknown } from '../../common/nls';
+import { emptyBoardsConfig } from '../api';
 import {
-  BoardListLabels,
-  createBoardList,
+  BoardsListLabels,
   EditBoardsConfigActionParams,
-  isInferredBoardListItem,
-  isMultiBoardsBoardListItem,
   SelectBoardsConfigActionParams,
-} from '../../common/protocol/board-list';
-import {
-  emptyBoardsConfig,
-  notConnected,
-  selectBoard,
-  unconfirmedBoard,
-} from '../../common/protocol/boards-service';
+  __tests,
+  createBoardsList,
+  isInferredBoardsListItem,
+  isMultiBoardsBoardsListItem,
+} from '../boardsList';
 import {
   arduinoNanoEsp32,
   bluetoothSerialPort,
@@ -36,11 +31,13 @@ import {
   unoSerialPort,
 } from './fixtures';
 
+const { notConnected, selectBoard, unconfirmedBoard, unknown } = __tests.nls;
+
 describe('board-list', () => {
-  describe('boardList#labels', () => {
+  describe('BoardsList#labels', () => {
     it('should handle no selected board+port', () => {
-      const { labels } = createBoardList({});
-      const expected: BoardListLabels = {
+      const { labels } = createBoardsList({});
+      const expected: BoardsListLabels = {
         boardLabel: selectBoard,
         portProtocol: undefined,
         selected: false,
@@ -50,13 +47,13 @@ describe('board-list', () => {
     });
 
     it('should handle port selected (port detected)', () => {
-      const { labels } = createBoardList(
+      const { labels } = createBoardsList(
         {
           ...detectedPort(unoSerialPort, uno),
         },
         { selectedBoard: undefined, selectedPort: unoSerialPort }
       );
-      const expected: BoardListLabels = {
+      const expected: BoardsListLabels = {
         boardLabel: selectBoard,
         portProtocol: undefined,
         selected: false,
@@ -66,13 +63,13 @@ describe('board-list', () => {
     });
 
     it('should handle port selected (port not detected)', () => {
-      const { labels } = createBoardList(
+      const { labels } = createBoardsList(
         {
           ...detectedPort(mkr1000SerialPort, mkr1000),
         },
         { selectedBoard: undefined, selectedPort: unoSerialPort }
       );
-      const expected: BoardListLabels = {
+      const expected: BoardsListLabels = {
         boardLabel: selectBoard,
         portProtocol: undefined,
         selected: false,
@@ -82,11 +79,11 @@ describe('board-list', () => {
     });
 
     it('should handle board selected (with FQBN)', () => {
-      const { labels } = createBoardList(
+      const { labels } = createBoardsList(
         {},
         { selectedBoard: uno, selectedPort: undefined }
       );
-      const expected: BoardListLabels = {
+      const expected: BoardsListLabels = {
         boardLabel: uno.name,
         portProtocol: undefined,
         selected: false,
@@ -96,14 +93,14 @@ describe('board-list', () => {
     });
 
     it('should handle board selected (no FQBN)', () => {
-      const { labels } = createBoardList(
+      const { labels } = createBoardsList(
         {},
         {
           selectedBoard: { name: 'my board', fqbn: undefined },
           selectedPort: undefined,
         }
       );
-      const expected: BoardListLabels = {
+      const expected: BoardsListLabels = {
         boardLabel: 'my board',
         portProtocol: undefined,
         selected: false,
@@ -113,13 +110,13 @@ describe('board-list', () => {
     });
 
     it('should handle both selected (port not detected)', () => {
-      const { labels } = createBoardList(
+      const { labels } = createBoardsList(
         {
           ...detectedPort(mkr1000SerialPort, mkr1000),
         },
         { selectedBoard: mkr1000, selectedPort: unoSerialPort }
       );
-      const expected: BoardListLabels = {
+      const expected: BoardsListLabels = {
         boardLabel: mkr1000.name,
         portProtocol: 'serial',
         selected: false,
@@ -129,13 +126,13 @@ describe('board-list', () => {
     });
 
     it('should handle both selected (board not discovered)', () => {
-      const { labels } = createBoardList(
+      const { labels } = createBoardsList(
         {
           ...detectedPort(unoSerialPort, uno),
         },
         { selectedBoard: mkr1000, selectedPort: unoSerialPort }
       );
-      const expected: BoardListLabels = {
+      const expected: BoardsListLabels = {
         boardLabel: mkr1000.name,
         portProtocol: 'serial',
         selected: false,
@@ -145,7 +142,7 @@ describe('board-list', () => {
     });
 
     it('should handle both selected (no FQBN)', () => {
-      const { labels } = createBoardList(
+      const { labels } = createBoardsList(
         {
           ...detectedPort(unoSerialPort, { name: 'my board', fqbn: undefined }),
         },
@@ -154,7 +151,7 @@ describe('board-list', () => {
           selectedPort: unoSerialPort,
         }
       );
-      const expected: BoardListLabels = {
+      const expected: BoardsListLabels = {
         boardLabel: 'my board',
         portProtocol: 'serial',
         selected: true,
@@ -164,13 +161,13 @@ describe('board-list', () => {
     });
 
     it('should handle both selected', () => {
-      const { labels } = createBoardList(
+      const { labels } = createBoardsList(
         {
           ...detectedPort(mkr1000NetworkPort, mkr1000),
         },
         { selectedBoard: mkr1000, selectedPort: mkr1000NetworkPort }
       );
-      const expected: BoardListLabels = {
+      const expected: BoardsListLabels = {
         boardLabel: mkr1000.name,
         portProtocol: 'network',
         selected: true,
@@ -180,29 +177,29 @@ describe('board-list', () => {
     });
   });
 
-  describe('createBoardList', () => {
+  describe('createBoardsList', () => {
     it('should sort the items deterministically', () => {
-      const { items } = createBoardList(detectedPorts);
+      const { items } = createBoardsList(detectedPorts);
 
       expect(items.length).to.be.equal(Object.keys(detectedPorts).length);
       expect(items[0].board).deep.equal(mkr1000);
       expect(items[1].board).deep.equal(uno);
       expect(items[2].board).is.undefined;
-      expect(isMultiBoardsBoardListItem(items[2])).to.be.true;
-      const boards2 = isMultiBoardsBoardListItem(items[2])
+      expect(isMultiBoardsBoardsListItem(items[2])).to.be.true;
+      const boards2 = isMultiBoardsBoardsListItem(items[2])
         ? items[2].boards
         : undefined;
       expect(boards2).deep.equal([arduinoNanoEsp32, esp32NanoEsp32]);
       expect(items[3].board).is.undefined;
-      expect(isMultiBoardsBoardListItem(items[3])).to.be.true;
-      const boards3 = isMultiBoardsBoardListItem(items[3])
+      expect(isMultiBoardsBoardsListItem(items[3])).to.be.true;
+      const boards3 = isMultiBoardsBoardsListItem(items[3])
         ? items[3].boards
         : undefined;
       expect(boards3).deep.equal([esp32S3Box, esp32S3DevModule]);
       expect(items[4].port).deep.equal(builtinSerialPort);
       expect(items[5].port).deep.equal(bluetoothSerialPort);
-      expect(items[6].port).deep.equal(undiscoveredSerialPort);
-      expect(items[7].port).deep.equal(undiscoveredUsbToUARTSerialPort);
+      expect(items[6].port).deep.equal(undiscoveredUsbToUARTSerialPort);
+      expect(items[7].port).deep.equal(undiscoveredSerialPort);
       expect(items[8].port.protocol).equal('network');
       expect(items[8].board).deep.equal(mkr1000);
     });
@@ -213,7 +210,7 @@ describe('board-list', () => {
         ...detectedPort(createPort('b'), { name: 'ab', fqbn: 'other:a:b' }),
         ...detectedPort(createPort('c'), { name: 'ac', fqbn: 'arduino:a:c' }),
       };
-      const { items } = createBoardList(detectedPorts);
+      const { items } = createBoardsList(detectedPorts);
 
       expect(items.length).to.be.equal(3);
       expect(items[0].board?.name).to.be.equal('aa');
@@ -228,20 +225,20 @@ describe('board-list', () => {
         ...detectedPort(portA),
         ...detectedPort(portB),
       };
-      const boardListHistory = {
+      const BoardsListHistory = {
         ...history(portA, { name: 'bbb', fqbn: undefined }),
         ...history(portB, { name: 'aaa', fqbn: undefined }),
       };
-      const { items } = createBoardList(
+      const { items } = createBoardsList(
         detectedPorts,
         emptyBoardsConfig(),
-        boardListHistory
+        BoardsListHistory
       );
 
       expect(items.length).to.be.equal(2);
       expect(items[0].port.address).to.be.equal('portB');
       expect(items[0].board).to.be.undefined;
-      const inferredBoardA = isInferredBoardListItem(items[0])
+      const inferredBoardA = isInferredBoardsListItem(items[0])
         ? items[0].inferredBoard
         : undefined;
       expect(inferredBoardA).to.be.not.undefined;
@@ -249,8 +246,8 @@ describe('board-list', () => {
 
       expect(items[1].port.address).to.be.equal('portA');
       expect(items[1].board).to.be.undefined;
-      expect(isInferredBoardListItem(items[1])).to.be.true;
-      const inferredBoardB = isInferredBoardListItem(items[1])
+      expect(isInferredBoardsListItem(items[1])).to.be.true;
+      const inferredBoardB = isInferredBoardsListItem(items[1])
         ? items[1].inferredBoard
         : undefined;
       expect(inferredBoardB).to.be.not.undefined;
@@ -268,11 +265,11 @@ describe('board-list', () => {
         ...detectedPort(portA, nonUnique_AAA, nonUnique_BBB),
         ...detectedPort(portB, unique_OtherZZZ, unique_ArduinoZZZ),
       };
-      const { items } = createBoardList(detectedPorts);
+      const { items } = createBoardsList(detectedPorts);
 
       expect(items.length).to.be.equal(2);
-      expect(isMultiBoardsBoardListItem(items[0])).to.be.true;
-      const ambiguousBoardWithUniqueName = isMultiBoardsBoardListItem(items[0])
+      expect(isMultiBoardsBoardsListItem(items[0])).to.be.true;
+      const ambiguousBoardWithUniqueName = isMultiBoardsBoardsListItem(items[0])
         ? items[0]
         : undefined;
       expect(ambiguousBoardWithUniqueName).to.be.not.undefined;
@@ -285,8 +282,8 @@ describe('board-list', () => {
         unique_OtherZZZ,
       ]);
 
-      expect(isMultiBoardsBoardListItem(items[1])).to.be.true;
-      const ambiguousBoardWithoutName = isMultiBoardsBoardListItem(items[1])
+      expect(isMultiBoardsBoardsListItem(items[1])).to.be.true;
+      const ambiguousBoardWithoutName = isMultiBoardsBoardsListItem(items[1])
         ? items[1]
         : undefined;
       expect(ambiguousBoardWithoutName).to.be.not.undefined;
@@ -305,17 +302,17 @@ describe('board-list', () => {
       const detectedPorts = {
         ...detectedPort(unoSerialPort, uno),
       };
-      const boardListHistory = {
+      const BoardsListHistory = {
         ...history(unoSerialPort, otherBoard),
       };
-      const { items } = createBoardList(
+      const { items } = createBoardsList(
         detectedPorts,
         emptyBoardsConfig(),
-        boardListHistory
+        BoardsListHistory
       );
 
       expect(items.length).to.be.equal(1);
-      const inferredBoard = isInferredBoardListItem(items[0])
+      const inferredBoard = isInferredBoardsListItem(items[0])
         ? items[0]
         : undefined;
       expect(inferredBoard).is.not.undefined;
@@ -323,14 +320,14 @@ describe('board-list', () => {
       expect(inferredBoard?.board).to.be.deep.equal(uno);
     });
 
-    it(`should use the '${Unknown}' as the board label when no boards were discovered on a detected port`, () => {
-      const { items } = createBoardList({ ...detectedPort(unoSerialPort) });
-      expect(items[0].labels.boardLabel).to.be.equal(Unknown);
+    it(`should use the '${unknown}' as the board label when no boards were discovered on a detected port`, () => {
+      const { items } = createBoardsList({ ...detectedPort(unoSerialPort) });
+      expect(items[0].labels.boardLabel).to.be.equal(unknown);
     });
 
     describe('boards', () => {
       it('should include discovered boards on detected ports', () => {
-        const { boards } = createBoardList({
+        const { boards } = createBoardsList({
           ...detectedPort(unoSerialPort, uno),
           ...detectedPort(mkr1000SerialPort, mkr1000),
           ...detectedPort(undiscoveredSerialPort),
@@ -348,7 +345,7 @@ describe('board-list', () => {
       });
 
       it('should include manually selected boards on detected ports', () => {
-        const { boards } = createBoardList({
+        const { boards } = createBoardsList({
           ...detectedPort(unoSerialPort, uno),
           ...detectedPort(undiscoveredSerialPort, uno),
           ...detectedPort(undiscoveredUsbToUARTSerialPort),
@@ -366,7 +363,7 @@ describe('board-list', () => {
       });
 
       it('should include manually overridden boards on detected ports', () => {
-        const { boards } = createBoardList(
+        const { boards } = createBoardsList(
           {
             ...detectedPort(unoSerialPort, uno),
             ...detectedPort(mkr1000SerialPort, mkr1000),
@@ -389,7 +386,7 @@ describe('board-list', () => {
       });
 
       it('should include all boards discovered on a port', () => {
-        const { boards } = createBoardList({
+        const { boards } = createBoardsList({
           ...detectedPort(
             nanoEsp32SerialPort,
             arduinoNanoEsp32,
@@ -422,7 +419,7 @@ describe('board-list', () => {
       });
 
       it('should include all boards discovered on a port (handle manual select)', () => {
-        const { boards } = createBoardList(
+        const { boards } = createBoardsList(
           {
             ...detectedPort(
               nanoEsp32SerialPort,
@@ -450,11 +447,56 @@ describe('board-list', () => {
           },
         ]);
       });
+
+      it('should sort ambiguous boards by their unique names first', () => {
+        const portA = createPort('portA');
+        const portB = createPort('portB');
+        const boardA1 = { name: 'A', fqbn: 'a1:b:c' };
+        const boardA2 = { name: 'A', fqbn: 'a2:b:c' };
+        const boardB1 = { name: 'B', fqbn: 'a:b1:c' };
+        const boardB2 = { name: 'B', fqbn: 'a:b2:c' };
+        const { boards } = createBoardsList({
+          ...detectedPort(portA, boardA1, boardA2),
+          ...detectedPort(portB, boardB1, boardB2),
+        });
+        expect(boards).to.be.deep.equal([
+          { port: portA, board: boardA1 },
+          { port: portA, board: boardA2 },
+          { port: portB, board: boardB1 },
+          { port: portB, board: boardB2 },
+        ]);
+      });
+
+      it('should fall back to natural order of the port address', () => {
+        const portA = createPort('portA');
+        const portB = createPort('portB');
+        const { boards } = createBoardsList({
+          ...detectedPort(portB, mkr1000),
+          ...detectedPort(portA, mkr1000),
+        });
+        expect(boards).to.be.deep.equal([
+          { port: portA, board: mkr1000 },
+          { port: portB, board: mkr1000 },
+        ]);
+      });
+
+      it('should sort items with ambiguous boards after others', () => {
+        const portA = createPort('portA');
+        const portB = createPort('portB');
+        const { boards } = createBoardsList({
+          ...detectedPort(portB, arduinoNanoEsp32, esp32NanoEsp32),
+          ...detectedPort(portA),
+        });
+        expect(boards).to.be.deep.equal([
+          { port: portB, board: arduinoNanoEsp32 },
+          { port: portB, board: esp32NanoEsp32 },
+        ]);
+      });
     });
 
     describe('defaultAction', () => {
       it("'select' should be the default action for identifier boards", () => {
-        const { items } = createBoardList({
+        const { items } = createBoardsList({
           ...detectedPort(mkr1000SerialPort, mkr1000),
         });
         const item = items[0];
@@ -466,7 +508,7 @@ describe('board-list', () => {
       });
 
       it("'select' should be the default action for manually selected items (no discovered boards)", () => {
-        const { items } = createBoardList(
+        const { items } = createBoardsList(
           {
             ...detectedPort(undiscoveredSerialPort),
           },
@@ -484,7 +526,7 @@ describe('board-list', () => {
       });
 
       it("'select' should be the default action for manually selected items (ambiguous boards)", () => {
-        const { items } = createBoardList(
+        const { items } = createBoardsList(
           {
             ...detectedPort(
               nanoEsp32SerialPort,
@@ -506,7 +548,7 @@ describe('board-list', () => {
       });
 
       it("'edit' should be the default action for ports with no boards", () => {
-        const { items } = createBoardList({
+        const { items } = createBoardsList({
           ...detectedPort(undiscoveredSerialPort),
         });
         const item = items[0];
@@ -521,7 +563,7 @@ describe('board-list', () => {
       });
 
       it("'edit' should be the default action for ports with multiple boards (unique board name)", () => {
-        const { items } = createBoardList({
+        const { items } = createBoardsList({
           ...detectedPort(
             nanoEsp32SerialPort,
             arduinoNanoEsp32,
@@ -541,7 +583,7 @@ describe('board-list', () => {
       });
 
       it("'edit' should be the default action for ports with multiple boards (no unique board name)", () => {
-        const { items } = createBoardList({
+        const { items } = createBoardsList({
           ...detectedPort(
             nanoEsp32DetectsMultipleEsp32BoardsSerialPort,
             esp32S3DevModule,
@@ -563,7 +605,7 @@ describe('board-list', () => {
 
     describe('otherActions', () => {
       it('should provide no other actions for identified board', () => {
-        const { items } = createBoardList({
+        const { items } = createBoardsList({
           ...detectedPort(mkr1000SerialPort, mkr1000),
         });
         const item = items[0];
@@ -571,7 +613,7 @@ describe('board-list', () => {
       });
 
       it('should provide no other actions for identified board (when historical revision is self)', () => {
-        const { items } = createBoardList(
+        const { items } = createBoardsList(
           {
             ...detectedPort(mkr1000SerialPort, mkr1000),
           },
@@ -585,7 +627,7 @@ describe('board-list', () => {
       });
 
       it('should provide no other actions for unknown boards', () => {
-        const { items } = createBoardList({
+        const { items } = createBoardsList({
           ...detectedPort(undiscoveredSerialPort),
         });
         const item = items[0];
@@ -593,7 +635,7 @@ describe('board-list', () => {
       });
 
       it('should provide no other actions for ambiguous boards', () => {
-        const { items } = createBoardList({
+        const { items } = createBoardsList({
           ...detectedPort(
             nanoEsp32SerialPort,
             arduinoNanoEsp32,
@@ -605,7 +647,7 @@ describe('board-list', () => {
       });
 
       it("should provide 'edit' action for unidentified items with manually selected board", () => {
-        const { items } = createBoardList(
+        const { items } = createBoardsList(
           {
             ...detectedPort(undiscoveredSerialPort),
           },
@@ -628,7 +670,7 @@ describe('board-list', () => {
       });
 
       it("should provide 'edit' action for ambiguous items with manually selected board (unique board name)", () => {
-        const { items } = createBoardList(
+        const { items } = createBoardsList(
           {
             ...detectedPort(
               nanoEsp32SerialPort,
@@ -656,7 +698,7 @@ describe('board-list', () => {
       });
 
       it("should provide 'edit' action for ambiguous items with manually selected board (no unique board name)", () => {
-        const { items } = createBoardList(
+        const { items } = createBoardsList(
           {
             ...detectedPort(
               nanoEsp32DetectsMultipleEsp32BoardsSerialPort,
@@ -684,7 +726,7 @@ describe('board-list', () => {
       });
 
       it("should provide 'edit' and 'revert' actions for identified items with a manually overridden board", () => {
-        const { items } = createBoardList(
+        const { items } = createBoardsList(
           {
             ...detectedPort(mkr1000SerialPort, mkr1000),
           },
@@ -713,6 +755,64 @@ describe('board-list', () => {
           },
         });
       });
+    });
+  });
+
+  describe('ports', () => {
+    it('should filter the ports', () => {
+      const boardsList = createBoardsList(detectedPorts, {
+        selectedBoard: mkr1000,
+        selectedPort: mkr1000NetworkPort,
+      });
+      const ports = boardsList.ports((p) => p.port.protocol === 'network');
+      expect(ports).to.have.lengthOf(1);
+      expect(ports[0]).to.be.deep.equal({
+        port: mkr1000NetworkPort,
+        boards: [mkr1000],
+      });
+      expect(ports.matchingIndex).to.be.equals(0);
+    });
+  });
+
+  describe('should group to ports by protocol', () => {
+    const actual = createBoardsList(detectedPorts).portsGroupedByProtocol();
+    expect(actual).to.be.deep.equal({
+      serial: [
+        {
+          port: mkr1000SerialPort,
+          boards: [mkr1000],
+        },
+        {
+          port: unoSerialPort,
+          boards: [uno],
+        },
+        {
+          port: nanoEsp32SerialPort,
+          boards: [arduinoNanoEsp32, esp32NanoEsp32],
+        },
+        {
+          port: nanoEsp32DetectsMultipleEsp32BoardsSerialPort,
+          boards: [esp32S3Box, esp32S3DevModule],
+        },
+        {
+          port: builtinSerialPort,
+        },
+        {
+          port: bluetoothSerialPort,
+        },
+        {
+          port: undiscoveredUsbToUARTSerialPort,
+        },
+        {
+          port: undiscoveredSerialPort,
+        },
+      ],
+      network: [
+        {
+          port: mkr1000NetworkPort,
+          boards: [mkr1000],
+        },
+      ],
     });
   });
 });
