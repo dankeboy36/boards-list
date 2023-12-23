@@ -776,7 +776,6 @@ describe('board-list', () => {
 
   describe('should group to ports by protocol', () => {
     const actual = createBoardsList(detectedPorts).portsGroupedByProtocol();
-    console.log(JSON.stringify(actual));
     expect(actual).to.be.deep.equal({
       serial: [
         {
