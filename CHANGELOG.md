@@ -1,3 +1,10 @@
+# [1.1.0](https://github.com/dankeboy36/boards-list/compare/1.0.0...1.1.0) (2023-12-23)
+
+
+### Features
+
+* reuse CLI APIs for the board and port ([#3](https://github.com/dankeboy36/boards-list/issues/3)) ([649818a](https://github.com/dankeboy36/boards-list/commit/649818a5a6f084629239c528b9e7e3cf2742948a))
+
 # 1.0.0 (2023-12-23)
 
 
