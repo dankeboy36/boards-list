@@ -33,7 +33,7 @@ export const esp32S3Box: BoardIdentifier = {
 
 export const bluetoothSerialPort: Port = {
   address: '/dev/cu.Bluetooth-Incoming-Port',
-  addressLabel: '/dev/cu.Bluetooth-Incoming-Port',
+  label: '/dev/cu.Bluetooth-Incoming-Port',
   protocol: 'serial',
   protocolLabel: 'Serial Port',
   properties: {},
@@ -41,7 +41,7 @@ export const bluetoothSerialPort: Port = {
 };
 export const builtinSerialPort: Port = {
   address: '/dev/cu.BLTH',
-  addressLabel: '/dev/cu.BLTH',
+  label: '/dev/cu.BLTH',
   protocol: 'serial',
   protocolLabel: 'Serial Port',
   properties: {},
@@ -49,7 +49,7 @@ export const builtinSerialPort: Port = {
 };
 export const undiscoveredSerialPort: Port = {
   address: '/dev/cu.usbserial-0001',
-  addressLabel: '/dev/cu.usbserial-0001',
+  label: '/dev/cu.usbserial-0001',
   protocol: 'serial',
   protocolLabel: 'Serial Port (USB)',
   properties: {
@@ -61,7 +61,7 @@ export const undiscoveredSerialPort: Port = {
 };
 export const mkr1000NetworkPort: Port = {
   address: '192.168.0.104',
-  addressLabel: 'Arduino at 192.168.0.104',
+  label: 'Arduino at 192.168.0.104',
   protocol: 'network',
   protocolLabel: 'Network Port',
   properties: {
@@ -77,7 +77,7 @@ export const mkr1000NetworkPort: Port = {
 };
 export const undiscoveredUsbToUARTSerialPort: Port = {
   address: '/dev/cu.SLAB_USBtoUART',
-  addressLabel: '/dev/cu.SLAB_USBtoUART',
+  label: '/dev/cu.SLAB_USBtoUART',
   protocol: 'serial',
   protocolLabel: 'Serial Port (USB)',
   properties: {
@@ -89,7 +89,7 @@ export const undiscoveredUsbToUARTSerialPort: Port = {
 };
 export const mkr1000SerialPort: Port = {
   address: '/dev/cu.usbmodem14301',
-  addressLabel: '/dev/cu.usbmodem14301',
+  label: '/dev/cu.usbmodem14301',
   protocol: 'serial',
   protocolLabel: 'Serial Port (USB)',
   properties: {
@@ -101,7 +101,7 @@ export const mkr1000SerialPort: Port = {
 };
 export const unoSerialPort: Port = {
   address: '/dev/cu.usbmodem14201',
-  addressLabel: '/dev/cu.usbmodem14201',
+  label: '/dev/cu.usbmodem14201',
   protocol: 'serial',
   protocolLabel: 'Serial Port (USB)',
   properties: {
@@ -113,7 +113,7 @@ export const unoSerialPort: Port = {
 };
 export const nanoEsp32SerialPort: Port = {
   address: '/dev/cu.usbmodem3485187BD9882',
-  addressLabel: '/dev/cu.usbmodem3485187BD9882',
+  label: '/dev/cu.usbmodem3485187BD9882',
   protocol: 'serial',
   protocolLabel: 'Serial Port (USB)',
   properties: {
@@ -125,7 +125,7 @@ export const nanoEsp32SerialPort: Port = {
 };
 export const nanoEsp32DetectsMultipleEsp32BoardsSerialPort: Port = {
   address: 'COM41',
-  addressLabel: 'COM41',
+  label: 'COM41',
   protocol: 'serial',
   protocolLabel: 'Serial Port (USB)',
   properties: {
@@ -138,7 +138,7 @@ export const nanoEsp32DetectsMultipleEsp32BoardsSerialPort: Port = {
 export function createPort(address: string, protocol = 'serial'): Port {
   return {
     address,
-    addressLabel: `Address label: ${address}`,
+    label: `Address label: ${address}`,
     protocol,
     protocolLabel: `Protocol label: ${protocol}`,
   };

@@ -1,22 +1,13 @@
+import type { Board as ApiBoard, Port as ApiPort } from 'ardunno-cli';
 import { FQBN } from 'fqbn';
 import naturalCompare from 'natural-compare';
 
 /**
- * Lightweight information to identify a board.\
- * \
- * Note: the `name` property of the board identifier must never participate in the board's identification.
- * Hence, it should only be used as the final fallback for the UI when the board's platform is not installed and only the board's name is available.
+ * Lightweight information to identify a board:
+ *  - The board's `name` is to provide a fallback for the UI. Preferably do not use this property for any sophisticated logic and board comparison. It must never participate in the board's identification.
+ *  - The FQBN might contain boards config options if selected from the discovered ports (see [arduino/arduino-ide#1588](https://github.com/arduino/arduino-ide/issues/1588)).
  */
-export interface BoardIdentifier {
-  /**
-   * The name of the board. It's only purpose is to provide a fallback for the UI. Preferably do not use this property for any sophisticated logic. When
-   */
-  readonly name: string;
-  /**
-   * The FQBN might contain boards config options if selected from the discovered ports (see [arduino/arduino-ide#1588](https://github.com/arduino/arduino-ide/issues/1588)).
-   */
-  readonly fqbn: string | undefined;
-}
+export type BoardIdentifier = Nullable<ApiBoard, 'fqbn'>;
 
 /**
  * Key is the combination of address and protocol formatted like `'arduino+${protocol}://${address}'` used to uniquely identify a port.
@@ -129,18 +120,13 @@ export function emptyBoardsConfig(): BoardsConfig {
   };
 }
 
-export interface Port extends PortIdentifier {
-  readonly addressLabel: string;
-  readonly protocolLabel: string;
-  readonly properties?: Record<string, string>;
-  readonly hardwareId?: string;
-}
+export type Port = Optional<ApiPort, 'hardwareId' | 'properties'>;
 
 export function isPort(arg: unknown): arg is Port {
   return (
     isPortIdentifier(arg) &&
-    (<Port>arg).addressLabel !== null &&
-    typeof (<Port>arg).addressLabel === 'string' &&
+    (<Port>arg).label !== null &&
+    typeof (<Port>arg).label === 'string' &&
     (<Port>arg).protocolLabel !== undefined &&
     typeof (<Port>arg).protocolLabel === 'string' &&
     ((<Port>arg).hardwareId === undefined ||
@@ -185,19 +171,10 @@ export function isDefinedBoardsConfig(
   );
 }
 
-export interface Port {
-  readonly address: string;
-  readonly addressLabel: string;
-  readonly protocol: string;
-  readonly protocolLabel: string;
-  readonly properties?: Record<string, string>;
-  readonly hardwareId?: string;
-}
-
 /**
  * Bare minimum information to identify port.
  */
-export type PortIdentifier = Readonly<Pick<Port, 'protocol' | 'address'>>;
+export type PortIdentifier = Readonly<Pick<ApiPort, 'protocol' | 'address'>>;
 
 export function portIdentifierEquals(
   left: PortIdentifier | undefined,
@@ -252,3 +229,11 @@ export type Defined<T> = {
 export type Mutable<T> = {
   -readonly [P in keyof T]: T[P];
 };
+
+// Source https://stackoverflow.com/a/61108377/5529090
+type Optional<T, K extends keyof T> = Pick<Partial<T>, K> & Omit<T, K>;
+
+type OrUndefined<T> = {
+  [P in keyof T]: T[P] | undefined;
+};
+type Nullable<T, K extends keyof T> = Pick<OrUndefined<T>, K> & Omit<T, K>;
