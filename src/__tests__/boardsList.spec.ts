@@ -34,7 +34,7 @@ import {
 const { notConnected, selectBoard, unconfirmedBoard, unknown } = __tests.nls;
 
 describe('board-list', () => {
-  describe('BoardsList#labels', () => {
+  describe('labels', () => {
     it('should handle no selected board+port', () => {
       const { labels } = createBoardsList({});
       const expected: BoardsListLabels = {
