@@ -1,8 +1,9 @@
-//@ts-check
-'use strict';
+// @ts-check
+'use strict'
 
 /** @type {import('semantic-release').Options} */
 module.exports = {
+  // eslint-disable-next-line no-template-curly-in-string
   tagFormat: '${version}',
   branches: ['main'],
   plugins: [
@@ -16,8 +17,9 @@ module.exports = {
       '@semantic-release/exec',
       {
         publishCmd:
+          // eslint-disable-next-line no-template-curly-in-string
           'echo "release_version=${nextRelease.version}" >> $GITHUB_OUTPUT',
       },
     ],
   ],
-};
+}
