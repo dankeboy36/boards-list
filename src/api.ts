@@ -16,15 +16,36 @@ export type BoardIdentifier = Nullable<ApiBoard, 'fqbn'>
 
 /**
  * Key is the combination of address and protocol formatted like
- * `'arduino+${protocol}://${address}'` used to uniquely identify a port.
+ * `'port+${protocol}://${address}'` used to uniquely identify a port.
  */
+const portKeyPrefix = 'port+'
+const portKeySeparator = '://'
+
 export function createPortKey(
   port: PortIdentifier | Port | DetectedPort
 ): string {
   if (isPortIdentifier(port)) {
-    return `arduino+${port.protocol}://${port.address}`
+    return `${portKeyPrefix}${port.protocol}${portKeySeparator}${port.address}`
   }
   return createPortKey(port.port)
+}
+
+/** Rehydrates a port identifier from its key. */
+export function parsePortKey(portKey: string): PortIdentifier | undefined {
+  if (!portKey.startsWith(portKeyPrefix)) {
+    return undefined
+  }
+  const withoutPrefix = portKey.slice(portKeyPrefix.length)
+  const separatorIndex = withoutPrefix.indexOf(portKeySeparator)
+  if (separatorIndex <= 0) {
+    return undefined
+  }
+  const protocol = withoutPrefix.slice(0, separatorIndex)
+  const address = withoutPrefix.slice(separatorIndex + portKeySeparator.length)
+  if (!protocol || !address) {
+    return undefined
+  }
+  return { protocol, address }
 }
 
 export function isPortIdentifier(arg: unknown): arg is PortIdentifier {
@@ -148,7 +169,7 @@ export interface DetectedPort {
 /**
  * The closest representation what the Arduino CLI detects with the `board list
  * --watch` gRPC equivalent. The keys are unique identifiers generated from the
- * port object (via `Port#keyOf`). The values are the detected ports with all
+ * port object (via `createPortKey`). The values are the detected ports with all
  * their optional `properties` and matching board list.
  */
 export type DetectedPorts = Readonly<Record<string, DetectedPort>>

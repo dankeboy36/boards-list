@@ -151,7 +151,7 @@ export function isInferredBoardsListItem(
 
 /**
  * Stores historical info about boards manually specified for detected boards.
- * The key are generated with `Port#keyOf`.
+ * The key are generated with `createPortKey`.
  */
 export type BoardsListHistory = Readonly<Record<string, BoardIdentifier>>
 

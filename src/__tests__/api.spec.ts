@@ -5,8 +5,10 @@ import {
   PortIdentifier,
   boardIdentifierComparator,
   boardIdentifierEquals,
+  createPortKey,
   findMatchingPortIndex,
   isDefinedBoardsConfig,
+  parsePortKey,
   portIdentifierEquals,
   portProtocolComparator,
 } from '../api'
@@ -263,6 +265,37 @@ describe('api', () => {
           { protocol: 'teensy', address: 'COM1' }
         )
       ).to.be.equal(0)
+    })
+  })
+
+  describe('portKey', () => {
+    it('should create port-prefixed keys', () => {
+      const actual = createPortKey(builtinSerialPort)
+      expect(actual).to.be.equal(
+        `port+${builtinSerialPort.protocol}://${builtinSerialPort.address}`
+      )
+    })
+
+    it('should revive a port identifier from a key', () => {
+      const portKey = createPortKey(mkr1000SerialPort)
+      const actual = parsePortKey(portKey)
+      expect(actual).to.deep.equal({
+        protocol: mkr1000SerialPort.protocol,
+        address: mkr1000SerialPort.address,
+      })
+    })
+
+    it('should return undefined for invalid keys', () => {
+      const cases = [
+        'arduino+serial:///dev/cu.usbmodem14201',
+        'port+serial://',
+        'port+://dev/cu.usbmodem14201',
+        'port+serial:/dev/cu.usbmodem14201',
+      ]
+
+      for (const portKey of cases) {
+        expect(parsePortKey(portKey)).to.be.undefined
+      }
     })
   })
 })
