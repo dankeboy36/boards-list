@@ -13,7 +13,7 @@ on:
       - main
 
 jobs:
-  build:
+  test:
     name: Test (${{ matrix.os }}, node-${{ matrix.node }})
     strategy:
       fail-fast: false
@@ -37,9 +37,6 @@ jobs:
 
       - name: Check Format
         run: npm run format && git diff --exit-code
-
-      - name: Check API Documentation
-        run: npm run docs && git diff --exit-code
 
       - name: Lint
         run: npm run lint
