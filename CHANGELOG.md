@@ -1,3 +1,16 @@
+# [2.0.0](https://github.com/dankeboy36/boards-list/compare/1.1.0...2.0.0) (2026-01-04)
+
+
+* feat!: change port key prefix to `port+` ([#5](https://github.com/dankeboy36/boards-list/issues/5)) ([12df6c7](https://github.com/dankeboy36/boards-list/commit/12df6c7390726fe66b4d5c7d77d96b15053e0254))
+
+
+### BREAKING CHANGES
+
+* Port keys now use the `port+` prefix instead of
+`arduino+`; previously stored keys will not parse unless migrated.
+
+Signed-off-by: dankeboy36 <dankeboy36@gmail.com>
+
 # [1.1.0](https://github.com/dankeboy36/boards-list/compare/1.0.0...1.1.0) (2023-12-23)
 
 
