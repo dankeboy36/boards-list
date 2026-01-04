@@ -32,8 +32,6 @@ import {
   unoSerialPort,
 } from './fixtures'
 
-/* eslint-disable camelcase */
-
 const { notConnected, selectBoard, unconfirmedBoard, unknown } = __tests.nls
 
 describe('board-list', () => {

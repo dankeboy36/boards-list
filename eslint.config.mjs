@@ -46,10 +46,10 @@ export default [
     },
   },
   {
-    files: ['**/*.spec.ts', '**/*.spec.tsx'],
+    files: ['**/*.spec.ts'],
     rules: {
       '@typescript-eslint/no-unused-expressions': 'off',
-      'no-unused-expressions': 'off',
+      camelcase: 'off',
     },
   },
 ]
