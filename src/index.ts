@@ -1,2 +1,2 @@
-export * from './boardsList';
-export * from './api';
+export * from './api'
+export * from './boardsList'

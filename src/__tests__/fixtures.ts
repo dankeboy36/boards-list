@@ -4,32 +4,32 @@ import {
   DetectedPorts,
   Port,
   createPortKey,
-} from '../api';
+} from '../api'
 
 export const mkr1000: BoardIdentifier = {
   name: 'Arduino MKR1000',
   fqbn: 'arduino:samd:mkr1000',
-};
+}
 export const uno: BoardIdentifier = {
   name: 'Arduino Uno',
   fqbn: 'arduino:avr:uno',
-};
+}
 export const arduinoNanoEsp32: BoardIdentifier = {
   fqbn: 'arduino:esp32:nano_nora',
   name: 'Arduino Nano ESP32',
-};
+}
 export const esp32NanoEsp32: BoardIdentifier = {
   fqbn: 'esp32:esp32:nano_nora',
   name: 'Arduino Nano ESP32',
-};
+}
 export const esp32S3DevModule: BoardIdentifier = {
   name: 'ESP32S3 Dev Module',
   fqbn: 'esp32:esp32:esp32s3',
-};
+}
 export const esp32S3Box: BoardIdentifier = {
   name: 'ESP32-S3-Box',
   fqbn: 'esp32:esp32:esp32s3box',
-};
+}
 
 export const bluetoothSerialPort: Port = {
   address: '/dev/cu.Bluetooth-Incoming-Port',
@@ -38,7 +38,7 @@ export const bluetoothSerialPort: Port = {
   protocolLabel: 'Serial Port',
   properties: {},
   hardwareId: '',
-};
+}
 export const builtinSerialPort: Port = {
   address: '/dev/cu.BLTH',
   label: '/dev/cu.BLTH',
@@ -46,7 +46,7 @@ export const builtinSerialPort: Port = {
   protocolLabel: 'Serial Port',
   properties: {},
   hardwareId: '',
-};
+}
 export const undiscoveredSerialPort: Port = {
   address: '/dev/cu.usbserial-0001',
   label: '/dev/cu.usbserial-0001',
@@ -58,7 +58,7 @@ export const undiscoveredSerialPort: Port = {
     vid: '0x10C4',
   },
   hardwareId: '0001',
-};
+}
 export const mkr1000NetworkPort: Port = {
   address: '192.168.0.104',
   label: 'Arduino at 192.168.0.104',
@@ -74,7 +74,7 @@ export const mkr1000NetworkPort: Port = {
     tcp_check: 'no',
   },
   hardwareId: '',
-};
+}
 export const undiscoveredUsbToUARTSerialPort: Port = {
   address: '/dev/cu.SLAB_USBtoUART',
   label: '/dev/cu.SLAB_USBtoUART',
@@ -86,7 +86,7 @@ export const undiscoveredUsbToUARTSerialPort: Port = {
     vid: '0x10C4',
   },
   hardwareId: '0001',
-};
+}
 export const mkr1000SerialPort: Port = {
   address: '/dev/cu.usbmodem14301',
   label: '/dev/cu.usbmodem14301',
@@ -98,7 +98,7 @@ export const mkr1000SerialPort: Port = {
     vid: '0x2341',
   },
   hardwareId: '94A3397C5150435437202020FF150838',
-};
+}
 export const unoSerialPort: Port = {
   address: '/dev/cu.usbmodem14201',
   label: '/dev/cu.usbmodem14201',
@@ -110,7 +110,7 @@ export const unoSerialPort: Port = {
     vid: '0x2341',
   },
   hardwareId: '75830303934351618212',
-};
+}
 export const nanoEsp32SerialPort: Port = {
   address: '/dev/cu.usbmodem3485187BD9882',
   label: '/dev/cu.usbmodem3485187BD9882',
@@ -122,7 +122,7 @@ export const nanoEsp32SerialPort: Port = {
     vid: '0x2341',
   },
   hardwareId: '3485187BD988',
-};
+}
 export const nanoEsp32DetectsMultipleEsp32BoardsSerialPort: Port = {
   address: 'COM41',
   label: 'COM41',
@@ -133,7 +133,7 @@ export const nanoEsp32DetectsMultipleEsp32BoardsSerialPort: Port = {
     serialNumber: '',
     vid: '0x303A',
   },
-};
+}
 
 export function createPort(address: string, protocol = 'serial'): Port {
   return {
@@ -141,21 +141,21 @@ export function createPort(address: string, protocol = 'serial'): Port {
     label: `Address label: ${address}`,
     protocol,
     protocolLabel: `Protocol label: ${protocol}`,
-  };
+  }
 }
 
 export function detectedPort(
   port: Port,
   ...boards: BoardIdentifier[]
 ): { [portKey: string]: DetectedPort } {
-  return { [createPortKey(port)]: boards.length ? { port, boards } : { port } };
+  return { [createPortKey(port)]: boards.length ? { port, boards } : { port } }
 }
 
 export function history(
   port: Port,
   board: BoardIdentifier
 ): { [portKey: string]: BoardIdentifier } {
-  return { [createPortKey(port)]: board };
+  return { [createPortKey(port)]: board }
 }
 
 export const detectedPorts: DetectedPorts = {
@@ -174,4 +174,4 @@ export const detectedPorts: DetectedPorts = {
   ),
   // multiple discovered on the same port with the same board name
   ...detectedPort(nanoEsp32SerialPort, arduinoNanoEsp32, esp32NanoEsp32),
-};
+}
