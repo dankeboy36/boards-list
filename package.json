@@ -1,6 +1,6 @@
 {
   "name": "boards-list",
-  "version": "2.0.0",
+  "version": "2.0.1",
   "description": "Arduino IDE's boards list logic as a standalone lib",
   "keywords": [
     "arduino"

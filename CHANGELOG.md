@@ -1,3 +1,10 @@
+## [2.0.1](https://github.com/dankeboy36/boards-list/compare/2.0.0...2.0.1) (2026-02-24)
+
+
+### Bug Fixes
+
+* relax peer dependency of Arduino CLI types ([#8](https://github.com/dankeboy36/boards-list/issues/8)) ([53c1cae](https://github.com/dankeboy36/boards-list/commit/53c1cae309f4e6a9e6501c49c88b9c5af8e9a562))
+
 # [2.0.0](https://github.com/dankeboy36/boards-list/compare/1.1.0...2.0.0) (2026-01-04)
 
 
