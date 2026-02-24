@@ -12,6 +12,10 @@ on:
     branches:
       - main
 
+concurrency:
+  group: build-${{ github.event.pull_request.number || github.ref }}
+  cancel-in-progress: true
+
 jobs:
   test:
     name: Test (${{ matrix.os }}, node-${{ matrix.node }})
@@ -23,12 +27,12 @@ jobs:
     runs-on: ${{ matrix.os }}
     steps:
       - name: Checkout
-        uses: actions/checkout@v4
+        uses: actions/checkout@8e8c483db84b4bee98b60c0593521ed34d9990e8 # v6.0.1
         with:
           token: ${{ secrets.GITHUB_TOKEN }}
 
       - name: Use Node.js
-        uses: actions/setup-node@v4
+        uses: actions/setup-node@395ad3262231945c25e8478fd5baf05154b1d79f # v6.1.0
         with:
           node-version: ${{ matrix.node }}
 
@@ -53,12 +57,12 @@ jobs:
     needs: [test]
     steps:
       - name: Checkout
-        uses: actions/checkout@v4
+        uses: actions/checkout@8e8c483db84b4bee98b60c0593521ed34d9990e8 # v6.0.1
         with:
           persist-credentials: false
 
       - name: Use Node.js
-        uses: actions/setup-node@v4
+        uses: actions/setup-node@395ad3262231945c25e8478fd5baf05154b1d79f # v6.1.0
         with:
           node-version: 22.x
 
@@ -74,13 +78,11 @@ jobs:
         env:
           OP_SERVICE_ACCOUNT_TOKEN: ${{ secrets.OP_SERVICE_ACCOUNT_TOKEN }}
           GITHUB_TOKEN: op://cicd_dankeboy36/GITHUB_TOKEN/credential
-          NPM_TOKEN: op://cicd_dankeboy36/NPM_TOKEN/credential
 
       - name: Release
         id: release
         run: npm run release
         env:
           GITHUB_TOKEN: ${{ steps.load_secrets.outputs.GITHUB_TOKEN }}
-          NPM_TOKEN: ${{ steps.load_secrets.outputs.NPM_TOKEN }}
     outputs:
       release_version: ${{ steps.release.outputs.release_version }}
